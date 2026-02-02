@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const MyApp());
@@ -96,6 +99,47 @@ class _LoginPageState extends State<LoginPage> {
   final _idController = TextEditingController();
   final _pwController = TextEditingController();
 
+  // 통합 소셜 로그인 처리 함수
+  Future<void> _handleSocialLogin(String provider) async {
+    // 1. provider에 따라 백엔드 URL 동적 생성
+    // 예: https://api.yourservice.com/auth/kakao/login
+    // 예: https://api.yourservice.com/auth/google/login
+    final String backendUrl = 'https://mocki.io/v1/ca33f517-b973-47e7-8614-b01729f59815';
+
+    try {
+      // 2. 백엔드에 GET 요청
+      final response = await http.get(Uri.parse(backendUrl));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final String targetUrl = data['url']; // 백엔드가 주는 실제 로그인 페이지 URL
+
+        if (targetUrl.isNotEmpty) {
+          final Uri uri = Uri.parse(targetUrl);
+
+          // 3. 브라우저 열기
+          if (await canLaunchUrl(uri)) {
+            await launchUrl(
+              uri,
+              // 구글 로그인은 보안 정책상 'externalApplication'(외부 브라우저) 모드가 가장 안전합니다.
+              mode: LaunchMode.inAppBrowserView,
+              browserConfiguration: const BrowserConfiguration(
+                showTitle: true, // 상단 주소창/제목 표시 여부
+              ),
+            );
+          } else {
+            _showSnackBar(context, "$provider 로그인 페이지를 열 수 없습니다.");
+          }
+        }
+      } else {
+        _showSnackBar(context, "$provider 서버 통신 오류: ${response.statusCode}");
+      }
+    } catch (e) {
+      print("$provider Login Error: $e");
+      _showSnackBar(context, "$provider 로그인 요청 중 오류가 발생했습니다.");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -186,19 +230,19 @@ class _LoginPageState extends State<LoginPage> {
                     _socialButton(
                       assetPath: "assets/icons/Google__logo.svg",
                       color: const Color(0xFFFFFFFF),
-                      onTap: () => _showSnackBar(context, "구글 로그인"),
+                      onTap: () => _handleSocialLogin('google'),
                     ),
                     const SizedBox(width: 20),
                     _socialButton(
                       assetPath: "assets/icons/KakaoTalk_logo.svg",
                       color: const Color(0xFFFEE500),
-                      onTap: () => _showSnackBar(context, "카카오 로그인"),
+                      onTap: () => _handleSocialLogin('kakao'),
                     ),
                     const SizedBox(width: 20),
                     _socialButton(
                       assetPath: "assets/icons/google-play-store-icon.svg",
                       color: const Color(0xFFFFFFFF),
-                      onTap: () => _showSnackBar(context, "구글 플레이스토어 로그인"),
+                      onTap: () => _handleSocialLogin('playstore'),
                     ),
                   ],
                 ),

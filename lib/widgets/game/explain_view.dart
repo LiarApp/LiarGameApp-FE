@@ -1,8 +1,14 @@
+//explain_view.dart
 import 'package:flutter/material.dart';
-import 'package:liar_game/widgets/common/gradient_app_bar.dart';
 import '../../screens/game/game_state.dart';
 import '../../models/player.dart';
 import '../common/game_button.dart';
+import '../common/gradient_app_bar.dart';
+
+enum ExplainPhase {
+  writing,
+  reveal,
+}
 
 class ExplainView extends StatefulWidget {
   final GameState state;
@@ -17,41 +23,131 @@ class ExplainView extends StatefulWidget {
   });
 
   @override
-  State<ExplainView> createState() =>_ExplainViewState();
+  State<ExplainView> createState() => _ExplainViewState();
 }
 
-class _ExplainViewState extends State<ExplainView>{
+class _ExplainViewState extends State<ExplainView> {
   final TextEditingController _controller = TextEditingController();
+  bool _timerRunning = false;
+
+  ExplainPhase _phase = ExplainPhase.writing;
+  int _revealRemainTime = 30;
 
   bool get isSubmitted =>
-    widget.state.explanations[widget.currentPlayer]!=null;
+      widget.state.explanations[widget.currentPlayer] != null;
 
-  bool _isRevealTime = false;
+  @override
+  void initState() {
+    super.initState();
+    _startExplainTimer();
+  }
 
-    @override
-    void dispose()
-    {
-      _controller.dispose();
-      super.dispose();
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
-    void _submit(){
-      if(_controller.text.trim().isEmpty) return ;
+  // ⏱ 작성 타이머
+  void _startExplainTimer() {
+    if (_timerRunning) return;
+    _timerRunning = true;
 
-    setState((){
-      widget.state.explanations[widget.currentPlayer] =
-        _controller.text.trim();
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return false;
 
-        _isRevealTime = true;
+      setState(() {
+        widget.state.tickExplainTime();
+      });
+
+      if (widget.state.remainTime == 0) {
+        _onExplainTimeOver();
+        return false;
+      }
+      return true;
+    }).whenComplete(() {
+      _timerRunning = false;
     });
   }
 
-  void _goNext(){
-    widget.onSubmit();
+  void _onExplainTimeOver() {
+  setState(() {
+    widget.state.explanations.forEach((player, explanation) {
+      if (explanation == null) {
+        widget.state.explanations[player] = '어려워요';
+      }
+    });
+
+    _phase = ExplainPhase.reveal;
+  });
+
+  _startRevealTimer();
+}
+
+  // 👀 공개 타이머
+  void _startRevealTimer() {
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return false;
+
+      setState(() {
+        _revealRemainTime--;
+      });
+
+      if (_revealRemainTime <= 0) {
+        widget.onSubmit();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  void _submit() {
+    if (_controller.text.trim().isEmpty) return;
+
+    setState(() {
+      widget.state.explanations[widget.currentPlayer] =
+          _controller.text.trim();
+    });
+  }
+
+  String _buildExplanationText(Player p) {
+    final explanation = widget.state.explanations[p];
+
+    // 📢 공개 단계 → 전부 공개
+    if (_phase == ExplainPhase.reveal) {
+      return explanation ?? '';
+    }
+
+    // ✍ 작성 단계
+
+    final bool meSubmitted = widget.state.explanations[widget.currentPlayer] != null;
+
+    if (p == widget.currentPlayer) {
+      return explanation ?? '작성 중...';
+    }
+
+    if (explanation == null) {
+      return '작성 중...';
+    }
+    
+    if(meSubmitted)
+    {
+      return explanation;
+    }
+
+    return '제출 완료';
   }
 
   @override
   Widget build(BuildContext context) {
+
+    final List<Player> explainTargets =
+      widget.state.activeCandidates.length == widget.state.players.length
+        ? widget.state.players
+        : widget. state.activeCandidates;
+        
     final state = widget.state;
 
     return Scaffold(
@@ -59,14 +155,20 @@ class _ExplainViewState extends State<ExplainView>{
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // ⏱ 타이머
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('토론 시간'),
                 Text(
-                  '${state.remainTime}초',
+                  _phase == ExplainPhase.writing
+                      ? '토론 시간'
+                      : '답변 공개',
+                ),
+                Text(
+                  _phase == ExplainPhase.writing
+                      ? '${state.remainTime}초'
+                      : '$_revealRemainTime초',
                   style: const TextStyle(
                     color: Color(0xFF8A3CFF),
                     fontWeight: FontWeight.bold,
@@ -74,42 +176,28 @@ class _ExplainViewState extends State<ExplainView>{
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            LinearProgressIndicator(
-              value:
-                  state.remainTime / GameState.maxExplainTime,
-              backgroundColor: Colors.grey.shade300,
-              valueColor: const AlwaysStoppedAnimation(
-                Color(0xFF8A3CFF),
-              ),
-            ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 12),
+
+            // 📋 설명 리스트
             Expanded(
               child: ListView(
-                children: state.players.map((p)
-                {
-                  final explanation = state.explanations[p];
-
+                children: explainTargets.map((p) {
                   return Card(
                     child: ListTile(
                       title: Text(p.name),
-                      subtitle: Text(
-                        explanation == null
-                        ?'작성 중...'
-                        :_isRevealTime
-                          ? explanation
-                          :'제출 완료',
-                      ),
+                      subtitle: Text(_buildExplanationText(p)),
                     ),
                   );
                 }).toList(),
               ),
             ),
-            if(!isSubmitted&&!_isRevealTime) ...[
-              const SizedBox(height:12),
+
+            // ✍ 입력창 (작성 단계 + 미제출)
+            if (_phase == ExplainPhase.writing && !isSubmitted) ...[
+              const SizedBox(height: 12),
               TextField(
                 controller: _controller,
-                maxLines:2,
+                maxLines: 2,
                 decoration: const InputDecoration(
                   hintText: '설명을 입력하세요',
                   border: OutlineInputBorder(),
@@ -120,13 +208,19 @@ class _ExplainViewState extends State<ExplainView>{
         ),
       ),
 
+      // ⬇ 버튼
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16),
         child: GameButton(
-          text: isSubmitted ? '다음으로':'제출',
-          onPressed: isSubmitted? _goNext:_submit,
+          text: _phase == ExplainPhase.writing
+              ? (isSubmitted ? '대기 중' : '제출')
+              : '다음으로',
+          onPressed: _phase == ExplainPhase.writing
+              ? (isSubmitted ? null : _submit)
+              : widget.onSubmit,
         ),
       ),
     );
   }
 }
+

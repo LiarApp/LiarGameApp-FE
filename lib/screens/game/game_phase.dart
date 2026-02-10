@@ -3,4 +3,5 @@ enum GamePhase {
   explain,
   vote,
   result,
+  voteReveal,
 }

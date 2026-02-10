@@ -1,3 +1,5 @@
+//result_view.dart
+
 import 'package:flutter/material.dart';
 import '../../screens/game/game_state.dart';
 import '../../models/player.dart';
@@ -95,6 +97,37 @@ class ResultView extends StatelessWidget {
                     .toList(),
               ),
             ),
+
+            const SizedBox(height:16),
+
+            Row(children:[
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: (){
+                    Navigator.popUntil(context, (route) => route.isFirst);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey.shade300,
+                    foregroundColor: Colors.black,
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  child: const Text('홈으로'),
+                  ),
+                ),
+                const SizedBox(width:12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: (){
+                      //
+                    },
+                    style:ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(48),
+                    ),
+                    child: const Text('한 판 더'),
+                  ),
+                ),
+            ],
+            )
           ],
         ),
       ),

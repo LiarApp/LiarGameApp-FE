@@ -1,15 +1,16 @@
+//game_state.dart
+
 import '../../models/player.dart';
 import '../../models/vote.dart';
 import 'game_phase.dart';
 
-enum GameResult{
+enum GameResult {
   liarWin,
-  citizenWin
+  citizenWin,
 }
 
 class GameState {
-
-  static const int maxExplainTime=60;
+  static const int maxExplainTime = 60;
 
   GamePhase phase;
   String topic;
@@ -17,7 +18,10 @@ class GameState {
   int remainTime;
 
   List<Player> players;
+  List<Player> activeCandidates;
   List<Vote> votes;
+
+  int currentVoterIndex = 0;
 
   GameResult? result;
 
@@ -30,56 +34,70 @@ class GameState {
     required this.remainTime,
     required this.players,
     required this.votes,
-    this.result,
-  }){
+  }) : activeCandidates = players {
     explanations = {
-      for(final p in players) p: null,
+      for (final p in players) p: null,
     };
   }
 
-  bool get isAllSubmitted{
-    return players.every((p) => explanations[p]!=null);
+  // ⏱ 토론 시간 감소
+  void tickExplainTime() {
+    if (remainTime > 0) {
+      remainTime--;
+    }
   }
 
-  void handleExplainTimeout() {
-    for(final p in players){
-      explanations[p] ??= '어려워요';
-    }  
-  }
+  // 🗳 최다 득표자(동점 포함) 구하기
+  List<Player> getMostVotedPlayers() {
+    final Map<Player, int> count = {};
 
-  void calculateResult()
-  {
-    final Map<Player, int> voteCount = {};
-
-    for(final vote in votes)
-    {
-      voteCount[vote.target] =
-          (voteCount[vote.target] ?? 0) + 1;
+    for (final vote in votes) {
+      count[vote.target] = (count[vote.target] ?? 0) + 1;
     }
 
-    Player? selectedPlayer;
-    int maxVotes = -1;
+    int max = 0;
+    List<Player> result = [];
 
-    voteCount.forEach((player, count){
-      if(count>maxVotes)
-      {
-        maxVotes = count;
-        selectedPlayer = player;
+    count.forEach((player, c) {
+      if (c > max) {
+        max = c;
+        result = [player];
+      } else if (c == max) {
+        result.add(player);
       }
     });
 
-    if(selectedPlayer == null)
-    {
-      result = GameResult.liarWin;
-      return;
+    return result;
+  }
+
+  // 🔁 동점 발생 시 상태 리셋
+  void resetForTie(List<Player> tiedPlayers) {
+    activeCandidates = tiedPlayers;
+    votes.clear();
+
+    for (final p in tiedPlayers) {
+      explanations[p] = null;
     }
 
-    result = selectedPlayer!.isLiar
-      ? GameResult.citizenWin
-      : GameResult.liarWin;
+    remainTime = maxExplainTime;
+  }
+
+  void startVote(){
+    votes.clear();
+    currentVoterIndex = 0;
+  }
+
+  // 🎯 최종 결과 계산 (예시)
+  void calculateResult() {
+    final mostVoted = getMostVotedPlayers().first;
+
+    activeCandidates = players;
+
+    result = mostVoted.isLiar
+        ? GameResult.citizenWin
+        : GameResult.liarWin;
   }
 }
-
 /*
 for(final p in state.players)
 {

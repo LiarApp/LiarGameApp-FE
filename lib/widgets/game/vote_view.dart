@@ -1,3 +1,5 @@
+//vote_view.dart
+
 import 'package:flutter/material.dart';
 import '../../screens/game/game_state.dart';
 import '../../models/player.dart';
@@ -6,7 +8,6 @@ import '../../models/vote.dart';
 import '../common/gradient_app_bar.dart';
 import '../common/game_button.dart';
 import '../common/text_style.dart';
-
 
 class VoteView extends StatefulWidget {
   final GameState state;
@@ -27,18 +28,23 @@ class _VoteViewState extends State<VoteView> {
 
   @override
   Widget build(BuildContext context) {
+    final currentPlayer = widget.state.players[widget.state.currentVoterIndex];
+    final players = widget.state.activeCandidates
+        .where((p) => p != currentPlayer)
+        .toList();
+
     return Scaffold(
       appBar: const GradientAppBar(title: '투표'),
 
       body: GridView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: widget.state.players.length,
+        itemCount: players.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 0.9,
         ),
         itemBuilder: (_, index) {
-          final player = widget.state.players[index];
+          final player = players[index];
           final selected = selectedPlayer == player;
 
           return GestureDetector(
@@ -72,17 +78,9 @@ class _VoteViewState extends State<VoteView> {
                     ),
                   ),
                   const SizedBox(height: 12),
-
-                  Text(
-                    player.name,
-                    style: GameTextStyles.normal,
-                  ),
-
+                  Text(player.name, style: GameTextStyles.normal),
                   const SizedBox(height: 4),
-                  Text(
-                    'Lv.${player.level}',
-                    style: GameTextStyles.gray,
-                  ),
+                  Text('Lv.${player.level}', style: GameTextStyles.gray),
 
                   if (selected) ...[
                     const SizedBox(height: 10),
@@ -103,22 +101,39 @@ class _VoteViewState extends State<VoteView> {
         child: GameButton(
           text: '투표하기',
           onPressed: selectedPlayer == null
-            ? null
-            : (){
-                final Player currentPlayer=
-                  widget.state.players[0];
+              ? null
+              : () {
 
-              widget.state.votes.add(
-                Vote(
-                  voter: currentPlayer,
-                  target:selectedPlayer!, 
-                ),
-              );
+                  final players = widget.state.players;
+                  /*
+                  widget.state.votes.addAll([
+                    Vote(voter: players[2], target: players[4]),
+                    Vote(voter: players[3], target: players[3]),
+                    Vote(voter: players[4], target: players[3]),
+                    Vote(voter: currentPlayer, target: selectedPlayer!),
+                  ]);
+                  */
+                  
+                  widget.state.votes.add(
+                    Vote(
+                      voter: currentPlayer,
+                      target: selectedPlayer!,
+                    ),
+                  );
+                  
+                  widget.state.currentVoterIndex++;
 
-              widget.state.calculateResult();
+                  if(widget.state.currentVoterIndex>=widget.state.players.length){
+                    widget.state.currentVoterIndex = 0;
+                    widget.onFinish();
+                  }else{
+                    setState(() {
+                      selectedPlayer = null;
+                    });
+                  }
 
-              widget.onFinish();
-            },
+                  widget.onFinish();
+                },
         ),
       ),
     );

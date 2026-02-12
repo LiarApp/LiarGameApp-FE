@@ -1,15 +1,16 @@
-import 'dart:async';
+//game_screen.dart
+
 import 'package:flutter/material.dart';
 
 import 'game_phase.dart';
 import 'game_state.dart';
-import '../../models/player.dart';
-import '../../models/vote.dart';
 
 import '../../widgets/game/role_check_view.dart';
 import '../../widgets/game/explain_view.dart';
 import '../../widgets/game/vote_view.dart';
+import '../../widgets/game/vote_reveal_view.dart';
 import '../../widgets/game/result_view.dart';
+import '../../models/player.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -20,91 +21,61 @@ class GameScreen extends StatefulWidget {
 
 class _GameScreenState extends State<GameScreen> {
   late GameState state;
-  Timer? _timer;
-
-  int _currentExplainIndex = 0;
-
-  Player get _currentPlayer => state.players[_currentExplainIndex];
 
   @override
   void initState() {
     super.initState();
-    _initGame();
-  }
 
-  void _initGame() {
     state = GameState(
       phase: GamePhase.roleCheck,
       topic: '과일',
       keyword: '망고',
       remainTime: GameState.maxExplainTime,
       players: [
-        Player(name: 'ffff', isAI: false, isLiar: false, level: 5),
-        Player(name: '플레이어2', isAI: false, isLiar: false, level: 12),
-        Player(name: '플레이어3', isAI: false, isLiar: false, level: 8),
-        Player(name: 'AI 1', isAI: true, isLiar: true, level: 13),
-        Player(name: 'AI 2', isAI: true, isLiar: false, level: 3),
-        Player(name: 'AI 3', isAI: true, isLiar: false, level: 19),
+        Player(name:'ffff', isAI:false, isLiar:true, level:5),
+        Player(name: '플레이어2', isAI: false, isLiar:false, level:12),
+        Player(name: '플레이어3', isAI: false, isLiar:false, level:8),
+        Player(name: 'AI 1', isAI:true, isLiar: true, level:13),
+        Player(name: 'AI 2', isAI: true, isLiar:false, level:3),
+        Player(name: 'AI 3', isAI: true, isLiar: false, level:19),
       ],
       votes: [],
     );
+          state.explanations[state.players[1]] = '저는 망고를 주스로 자주 마셔요';
 
-      state.explanations[state.players[1]] ='저는 망고를 주스로 자주 마셔요';
   }
 
-  void _startTimer() {
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.remainTime <= 0) {
-        timer.cancel();
-
-        state.handleExplainTimeout();
-        _goToVote();
-      } else {
-        setState(() {
-          state.remainTime--;
-        });
-      }
+  void _goToResultOrTie()
+  {
+    setState((){
+      state.phase = GamePhase.voteReveal;
     });
   }
 
-  void _goToExplain() {
-    setState(() {
-      state.phase = GamePhase.explain;
-      state.remainTime = GameState.maxExplainTime;
-      _currentExplainIndex = 0;
-    });
-    _startTimer();
-  }
+  /// 투표 종료 → 동점이면 재설명, 아니면 결과 공개
+  /*
+  void _goToResultOrTie() {
+    final tiedPlayers = state.getMostVotedPlayers();
 
-  void _onExplainSubmitted(){
-    if(state.isAllSubmitted){
-      _goToVote();
-    }else{
-      setState(()
-      {
-        _currentExplainIndex++;
+    if (tiedPlayers.length > 1) {
+      setState(() {
+        state.resetForTie(tiedPlayers);
+        state.phase = GamePhase.explain;
       });
+      return;
     }
-  }
 
-  void _goToVote() {
-    _timer?.cancel();
     setState(() {
-      state.phase = GamePhase.vote;
+      state.phase = GamePhase.voteReveal;
     });
   }
+  */
 
-  void _goToResult() {
+  void _goToFinalResult() {
+    state.calculateResult();
     setState(() {
       state.phase = GamePhase.result;
     });
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
   }
 
   @override
@@ -113,24 +84,52 @@ class _GameScreenState extends State<GameScreen> {
       case GamePhase.roleCheck:
         return RoleCheckView(
           state: state,
-          onConfirm: _goToExplain,
+          onConfirm: () {
+            setState(() {
+              state.phase = GamePhase.explain;
+            });
+          },
         );
 
       case GamePhase.explain:
         return ExplainView(
           state: state,
-          currentPlayer: _currentPlayer,
-          onSubmit: _goToVote,
+          currentPlayer: state.players.first,
+          onSubmit: () {
+            setState(() {
+              state.startVote();
+              state.phase = GamePhase.vote;
+            });
+          },
         );
 
       case GamePhase.vote:
         return VoteView(
           state: state,
-          onFinish: _goToResult,
+          onFinish: _goToResultOrTie,
+        );
+/*
+      case GamePhase.voteReveal:
+        return VoteRevealView(
+          state: state,
+          onNext: _goToFinalResult,
+        );
+*/
+
+      case GamePhase.voteReveal:
+        return VoteRevealView(
+          state: state,
+          onNext: (nextPhase){
+            setState(() {
+              state.phase = nextPhase;
+            });
+          },
         );
 
       case GamePhase.result:
-        return ResultView(state: state);
+        return ResultView(
+          state: state, // ✅ onConfirm 제거
+        );
     }
   }
 }

@@ -1,3 +1,5 @@
+// role_check_view.dart
+
 import 'package:flutter/material.dart';
 import '../../screens/game/game_state.dart';
 import '../common/gradient_app_bar.dart';
@@ -17,8 +19,11 @@ class RoleCheckView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final player = state.players.first;
+    final bool isLiar = player.isLiar;
+
     return Scaffold(
-      appBar: const GradientAppBar(title: '주제 확인'),
+      appBar: const GradientAppBar(title: '역할 확인'),
       body: Center(
         child: Card(
           margin: const EdgeInsets.all(24),
@@ -32,8 +37,8 @@ class RoleCheckView extends StatelessWidget {
               children: [
                 /// 🔥 역할 칩 (공통 위젯)
                 RoleChip(
-                  text: '시민',
-                  isLiar: false,
+                  text: isLiar?'라이어':'시민',
+                  isLiar: isLiar,
                 ),
                 const SizedBox(height: 20),
 
@@ -46,12 +51,28 @@ class RoleCheckView extends StatelessWidget {
 
                 const Divider(height: 32),
 
-                const Text('제시어'),
-                const SizedBox(height: 6),
-                Text(
-                  state.keyword,
-                  style: GameTextStyles.pink,
-                ),
+                if(!isLiar) ...[
+                  const Text('제시어'),
+                  const SizedBox(height:6),
+                  Text(
+                    state.keyword,
+                    style: GameTextStyles.pink,
+                  ),
+                ]else... [
+                  const Text(
+                    '당신은 라이어입니다',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height:8),
+                  const Text(
+                    '제시어는 공개되지 않습니다\n'
+                    '다른 플레이어들의 설명을 잘 듣고\n'
+                    '정체를 숨겨보세요!',
+                    textAlign: TextAlign.center,
+                  ),
+                ],
               ],
             ),
           ),

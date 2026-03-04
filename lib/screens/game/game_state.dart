@@ -8,9 +8,20 @@ enum GameResult {
   liarWin,
   citizenWin,
 }
+//
+enum GameMode{
+  normal,
+  fool,
+  spy,
+}
 
 class GameState {
-  static const int maxExplainTime = 60;
+  static const int maxExplainTime = 10;
+  //추후에 수정하기
+
+  int explainTime;
+  int voteTime;
+  GameMode mode;
 
   GamePhase phase;
   String topic;
@@ -25,16 +36,23 @@ class GameState {
 
   GameResult? result;
 
+  Player? finalVotedPlayer; // 최종 지목된 사람
+  bool liarGuessedCorrectly = false;
+
   late Map<Player, String?> explanations;
 
   GameState({
     required this.phase,
     required this.topic,
     required this.keyword,
-    required this.remainTime,
+    //required this.remainTime,
     required this.players,
     required this.votes,
-  }) : activeCandidates = players {
+    required this.explainTime,
+    required this.voteTime,
+    required this.mode,
+  }) : remainTime = explainTime,
+    activeCandidates = players {
     explanations = {
       for (final p in players) p: null,
     };
@@ -87,17 +105,41 @@ class GameState {
     currentVoterIndex = 0;
   }
 
+  void finalizeResultAfterLiarGuess(){
+    if(liarGuessedCorrectly){
+      result = GameResult.liarWin;
+    }else{
+      result = GameResult.citizenWin;
+    }
+  }
+
   // 🎯 최종 결과 계산 (예시)
   void calculateResult() {
     final mostVoted = getMostVotedPlayers().first;
-
+    finalVotedPlayer = mostVoted; //
     activeCandidates = players;
-
+    
+    if(!mostVoted.isLiar){
+      result = GameResult.liarWin;
+      return;
+    }
+/*
     result = mostVoted.isLiar
         ? GameResult.citizenWin
         : GameResult.liarWin;
+*/
   }
 }
+/*
+Player getMostVotedPlayer()
+{
+  return getMostVotedPlayers().first;
+}
+
+bool isMostVotedPlayerLiar(){
+  final player = getMostVotedPlayer();
+  return player.isLiar;
+}*/
 /*
 for(final p in state.players)
 {

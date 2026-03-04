@@ -24,14 +24,16 @@ class VoteRevealView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const GradientAppBar(title: '투표 결과 공개'),
+      appBar: const GradientAppBar(title: ' '),
 
       body: GridView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: state.votes.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 0.9,
+          childAspectRatio: 1.0,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
         ),
         itemBuilder: (_, index) {
           final Vote vote = state.votes[index];
@@ -100,7 +102,17 @@ class VoteRevealView extends StatelessWidget {
             else
             {
               state.calculateResult();
+
+              if(state.finalVotedPlayer!.isLiar){
+                onNext(GamePhase.liarGuess);
+              }else{
+                state.result = GameResult.liarWin;
+                onNext(GamePhase.result);
+              }
+              /*
+              state.calculateResult();
               onNext(GamePhase.result);
+              */
             }
           },
         ),

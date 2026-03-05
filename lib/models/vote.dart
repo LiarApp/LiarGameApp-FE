@@ -1,4 +1,3 @@
-//..ff
 import 'player.dart';
 
 class Vote{
@@ -11,6 +10,3 @@ class Vote{
     required this.target,
   });
 }
-
-
-

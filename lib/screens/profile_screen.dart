@@ -10,15 +10,12 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // --- [Mock Data] ---
   String _nickname = "친절한 라마";
   int _level = 12;
   int _selectedImageIndex = 0;
-
   int _winCount = 45;
   int _loseCount = 30;
   bool _allowInvite = true;
-
   DateTime _lastNicknameUpdate = DateTime.now().subtract(const Duration(days: 20));
 
   final List<String> _profileImages = [
@@ -30,7 +27,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     "https://picsum.photos/id/433/200/200",
   ];
 
-  // --- [Helper Methods] ---
   String get _winRate {
     int total = _winCount + _loseCount;
     if (total == 0) return "0%";
@@ -38,10 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return "${rate.toStringAsFixed(1)}%";
   }
 
-  bool _canEditNickname() {
-    final difference = DateTime.now().difference(_lastNicknameUpdate).inDays;
-    return difference >= 14;
-  }
+  bool _canEditNickname() => DateTime.now().difference(_lastNicknameUpdate).inDays >= 14;
 
   void _showEditNicknameDialog() {
     if (!_canEditNickname()) {
@@ -49,7 +42,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       showSnackBar(context, "닉네임은 2주마다 수정 가능합니다.\n($daysLeft일 남음)");
       return;
     }
-
     final controller = TextEditingController();
     bool isChecked = false;
 
@@ -117,9 +109,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(width: 8),
-
                     Expanded(
                       flex: 1,
                       child: SizedBox(
@@ -148,9 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showImagePickerSheet() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) {
         return Container(
           padding: const EdgeInsets.all(20),
@@ -158,19 +146,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text("프로필 이미지 선택",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center
-              ),
+              const Text("프로필 이미지 선택", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
               const SizedBox(height: 20),
               Expanded(
                 child: GridView.builder(
                   itemCount: _profileImages.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
-                  ),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10),
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: () {
@@ -181,16 +162,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(
-                              color: _selectedImageIndex == index
-                                  ? Theme.of(context).primaryColor
-                                  : Colors.grey[300]!,
-                              width: 3
-                          ),
+                          border: Border.all(color: _selectedImageIndex == index ? Theme.of(context).primaryColor : Colors.grey[300]!, width: 3),
                         ),
-                        child: CircleAvatar(
-                          backgroundImage: NetworkImage(_profileImages[index]),
-                        ),
+                        child: CircleAvatar(backgroundImage: NetworkImage(_profileImages[index])),
                       ),
                     );
                   },
@@ -206,55 +180,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).primaryColor;
-
     return Scaffold(
       appBar: AppBar(title: const Text("프로필")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // 1. 프로필 이미지 + 사진 변경 버튼 (기존 레벨 위치)
             Center(
               child: Stack(
                 children: [
-                  // 프로필 이미지
                   GestureDetector(
                     onTap: _showImagePickerSheet,
                     child: Container(
-                      width: 120,
-                      height: 120,
+                      width: 120, height: 120,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.grey[300]!, width: 2),
-                        image: DecorationImage(
-                          image: NetworkImage(_profileImages[_selectedImageIndex]),
-                          fit: BoxFit.cover,
-                        ),
+                        image: DecorationImage(image: NetworkImage(_profileImages[_selectedImageIndex]), fit: BoxFit.cover),
                       ),
                     ),
                   ),
-
-                  // [수정됨] 사진 변경 버튼 (우측 하단)
                   Positioned(
-                    bottom: 0,
-                    right: 0,
+                    bottom: 0, right: 0,
                     child: GestureDetector(
                       onTap: _showImagePickerSheet,
                       child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: primaryColor, // 앱 테마 색상
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
+                        width: 36, height: 36,
+                        decoration: BoxDecoration(color: primaryColor, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]),
                         child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
                       ),
                     ),
@@ -263,75 +215,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 20),
-
-            // 2. [수정됨] 레벨 + 닉네임 + 수정 버튼
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // 레벨 표시 (닉네임 왼쪽)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    "Lv.$_level",
-                    style: TextStyle(
-                      color: primaryColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
+                  decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(8)),
+                  child: Text("Lv.$_level", style: TextStyle(color: primaryColor, fontWeight: FontWeight.bold, fontSize: 14)),
                 ),
                 const SizedBox(width: 8),
-
-                // 닉네임
-                Text(
-                  _nickname,
-                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
+                Text(_nickname, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const SizedBox(width: 4),
-
-                // 수정 버튼
-                IconButton(
-                  onPressed: _showEditNicknameDialog,
-                  icon: const Icon(Icons.edit, size: 18, color: Colors.grey),
-                  tooltip: "닉네임 변경",
-                  constraints: const BoxConstraints(), // 아이콘 버튼 여백 최소화
-                  padding: const EdgeInsets.all(8),
-                )
+                IconButton(onPressed: _showEditNicknameDialog, icon: const Icon(Icons.edit, size: 18, color: Colors.grey), tooltip: "닉네임 변경", constraints: const BoxConstraints(), padding: const EdgeInsets.all(8))
               ],
             ),
             const Text("닉네임은 2주마다 수정 가능해요.", style: TextStyle(color: Colors.grey, fontSize: 13)),
-
             const SizedBox(height: 30),
-
-            // 3. 전적 정보 (카드 형태)
             Row(
               children: [
-                Expanded(
-                  child: _buildStatCard("승리 횟수", "$_winCount회", Icons.emoji_events_rounded, Colors.amber),
-                ),
+                Expanded(child: _buildStatCard("승리 횟수", "$_winCount회", Icons.emoji_events_rounded, Colors.amber)),
                 const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard("승률", _winRate, Icons.pie_chart_rounded, Colors.blue),
-                ),
+                Expanded(child: _buildStatCard("승률", _winRate, Icons.pie_chart_rounded, Colors.blue)),
               ],
             ),
-
             const SizedBox(height: 30),
-
-            // 4. 설정 (초대 허용)
             Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[200]!),
-                boxShadow: [
-                  BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, spreadRadius: 2),
-                ],
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey[200]!), boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)]),
               child: SwitchListTile(
                 value: _allowInvite,
                 onChanged: (value) {
@@ -341,10 +250,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: const Text("게임 초대 허용", style: TextStyle(fontWeight: FontWeight.bold)),
                 subtitle: const Text("초대를 허용하면 친구들이\n나를 게임에 초대할 수 있어요."),
                 activeColor: primaryColor,
-                secondary: Icon(
-                  _allowInvite ? Icons.notifications_active_rounded : Icons.notifications_off_rounded,
-                  color: _allowInvite ? primaryColor : Colors.grey,
-                ),
+                secondary: Icon(_allowInvite ? Icons.notifications_active_rounded : Icons.notifications_off_rounded, color: _allowInvite ? primaryColor : Colors.grey),
               ),
             ),
           ],
@@ -353,18 +259,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // 통계 카드 위젯 빌더
   Widget _buildStatCard(String title, String value, IconData icon, Color iconColor) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
-        boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, spreadRadius: 2),
-        ],
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey[200]!), boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)]),
       child: Column(
         children: [
           Icon(icon, color: iconColor, size: 32),

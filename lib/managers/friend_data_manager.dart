@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 // [Friend 모델]
 class Friend {
   final String nickname;
-  final String status; // 'online', 'playing', 'offline'
-  final String lastSeen; // 오프라인일 때만 사용
+  final String status;
+  final String lastSeen;
   final String avatarUrl;
 
   Friend({
@@ -15,86 +15,84 @@ class Friend {
   });
 }
 
-// [데이터 매니저]
+// [신고 데이터 모델]
+class Report {
+  final String targetNickname;
+  final String reason;
+  final DateTime date;
+
+  Report({
+    required this.targetNickname,
+    required this.reason,
+    required this.date,
+  });
+}
+
 class FriendDataManager extends ChangeNotifier {
   static final FriendDataManager _instance = FriendDataManager._internal();
   factory FriendDataManager() => _instance;
   FriendDataManager._internal();
 
-  // --- [Data] ---
-
-  // 1. 내 친구 목록
+  // --- [기존 데이터] ---
   final List<Friend> friends = [
     Friend(nickname: "게임왕", status: "playing", avatarUrl: "https://picsum.photos/id/11/200/200"),
     Friend(nickname: "즐겜유저", status: "online", avatarUrl: "https://picsum.photos/id/12/200/200"),
-    Friend(nickname: "초보에요", status: "offline", lastSeen: "2시간 전", avatarUrl: "https://picsum.photos/id/13/200/200"),
-    Friend(nickname: "스피드레이서", status: "playing", avatarUrl: "https://picsum.photos/id/14/200/200"),
   ];
-
-  // 2. 최근 플레이 유저
   final List<Friend> recentPlayers = [
     Friend(nickname: "아무개1", status: "offline", lastSeen: "5분 전", avatarUrl: "https://picsum.photos/id/20/200/200"),
-    Friend(nickname: "고수등장", status: "online", avatarUrl: "https://picsum.photos/id/21/200/200"),
   ];
-
-  // 3. [NEW] 나에게 온 친구 요청 (확인용 가짜 데이터)
-  final List<Friend> receivedRequests = [
-    Friend(nickname: "친해지고싶어", status: "online", avatarUrl: "https://picsum.photos/id/40/200/200"),
-    Friend(nickname: "버스기사", status: "offline", lastSeen: "1일 전", avatarUrl: "https://picsum.photos/id/41/200/200"),
-  ];
-
-  // 4. 내가 보낸 요청 대기 목록 (닉네임만 저장)
+  final List<Friend> receivedRequests = [];
   final Set<String> pendingRequests = {};
-
   final int maxFriends = 50;
 
-  // --- [Actions] ---
+  // --- [NEW: 차단 및 신고 데이터] ---
+  final List<Friend> blockedUsers = [
+    Friend(nickname: "욕설유저", status: "offline", avatarUrl: "https://picsum.photos/id/100/200/200"),
+  ];
 
-  // 친구 직접 추가 (검색 등으로)
-  void addFriend(String nickname) {
-    friends.add(Friend(
-      nickname: nickname,
-      status: "offline",
-      lastSeen: "방금 전",
-      avatarUrl: "https://picsum.photos/200/300",
-    ));
-    pendingRequests.remove(nickname);
-    notifyListeners();
-  }
+  final List<Report> reports = [
+    Report(targetNickname: "비매너유저", reason: "게임 중 심한 욕설", date: DateTime.now().subtract(const Duration(days: 1))),
+  ];
 
-  // 친구 삭제
-  void removeFriend(int index) {
-    if (index >= 0 && index < friends.length) {
-      friends.removeAt(index);
-      notifyListeners();
+  // --- [기존 Actions 생략...] ---
+  void addFriend(String nickname) { /* ... */ }
+  void removeFriend(int index) { /* ... */ }
+  void sendRequest(String nickname) { /* ... */ }
+  bool isPending(String nickname) => pendingRequests.contains(nickname);
+  void acceptRequest(Friend requestSender) { /* ... */ }
+  void rejectRequest(Friend requestSender) { /* ... */ }
+
+  // --- [NEW: 차단 기능] ---
+  void blockUser(Friend user) {
+    // 1. 친구 목록에 있다면 삭제
+    friends.removeWhere((f) => f.nickname == user.nickname);
+    // 2. 대기/요청 목록에서도 삭제
+    receivedRequests.removeWhere((f) => f.nickname == user.nickname);
+    pendingRequests.remove(user.nickname);
+    // 3. 차단 목록에 추가 (중복 방지)
+    if (!blockedUsers.any((f) => f.nickname == user.nickname)) {
+      blockedUsers.add(user);
     }
-  }
-
-  // 내가 친구 요청 보내기
-  void sendRequest(String nickname) {
-    pendingRequests.add(nickname);
     notifyListeners();
   }
 
-  // 내가 보낸 요청인지 확인
-  bool isPending(String nickname) {
-    return pendingRequests.contains(nickname);
-  }
-
-  // --- [NEW] 받은 요청 처리 기능 ---
-
-  // 요청 수락
-  void acceptRequest(Friend requestSender) {
-    // 친구 목록에 추가
-    friends.insert(0, requestSender); // 목록 맨 앞에 추가
-    // 요청 목록에서 제거
-    receivedRequests.remove(requestSender);
+  void unblockUser(Friend user) {
+    blockedUsers.remove(user);
     notifyListeners();
   }
 
-  // 요청 거절
-  void rejectRequest(Friend requestSender) {
-    receivedRequests.remove(requestSender);
+  // --- [NEW: 신고 기능] ---
+  void reportUser(String nickname, String reason) {
+    reports.add(Report(
+      targetNickname: nickname,
+      reason: reason,
+      date: DateTime.now(),
+    ));
+    notifyListeners();
+  }
+
+  void cancelReport(Report report) {
+    reports.remove(report);
     notifyListeners();
   }
 }

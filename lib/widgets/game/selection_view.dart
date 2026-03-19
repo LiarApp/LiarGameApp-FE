@@ -2,7 +2,7 @@
 // 임시화면
 
 import 'package:flutter/material.dart';
-import 'package:liargame/screens/game/game_state.dart';
+import '../../screens/game/game_state.dart';
 import '../../screens/game/game_screen.dart';
 // import '../../screens/game/game_mode.dart';
 

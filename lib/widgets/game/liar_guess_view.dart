@@ -1,7 +1,7 @@
 //liar_guess_view.dart
 
 import 'package:flutter/material.dart';
-import 'package:liargame/screens/game/game_state.dart';
+import '../../screens/game/game_state.dart';
 
 import '../common/gradient_app_bar.dart';
 import '../common/game_button.dart';

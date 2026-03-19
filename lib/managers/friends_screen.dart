@@ -1,3 +1,4 @@
+// lib/screens/friends_screen.dart
 import 'package:flutter/material.dart';
 import '../utils/common_utils.dart';
 import '../managers/friend_data_manager.dart';
@@ -159,9 +160,95 @@ class _FriendsScreenState extends State<FriendsScreen> {
     );
   }
 
+  // --- [★NEW: 신고 사유 입력 다이얼로그] ---
+  void _showReportDialog(String targetNickname) {
+    final reasonController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text("$targetNickname님 신고", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("신고 사유를 구체적으로 작성해 주세요.", style: TextStyle(fontSize: 14, color: Colors.grey)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: "예: 심한 욕설, 스팸, 비매너 플레이 등",
+                  hintStyle: const TextStyle(color: Colors.black38, fontSize: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.all(12),
+                ),
+              ),
+            ],
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: SizedBox(
+                    height: 48,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        side: BorderSide(color: Colors.grey[300]!),
+                        foregroundColor: Colors.grey[700],
+                      ),
+                      child: const Text("취소"),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final reason = reasonController.text.trim();
+
+                        if (reason.isEmpty) {
+                          showSnackBar(context, "신고 사유를 입력해 주세요.");
+                          return;
+                        }
+
+                        // 입력받은 사유를 데이터 매니저에 전달
+                        _dataManager.reportUser(targetNickname, reason);
+
+                        Navigator.pop(context); // 팝업 닫기
+                        showSnackBar(context, "신고가 정상적으로 접수되었습니다.");
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        elevation: 0,
+                      ),
+                      child: const Text("신고 접수", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // ListenableBuilder: 데이터 변경 시 자동 갱신
     return ListenableBuilder(
       listenable: _dataManager,
       builder: (context, child) {
@@ -178,8 +265,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
           ),
           body: ListView(
             children: [
-
-              // ★ [NEW] 0. 받은 친구 요청 섹션 (요청이 있을 때만 표시) ★
+              // 0. 받은 친구 요청 섹션
               if (_dataManager.receivedRequests.isNotEmpty) ...[
                 _buildSectionHeader("받은 친구 요청 (${_dataManager.receivedRequests.length})"),
                 ListView.builder(
@@ -199,7 +285,6 @@ class _FriendsScreenState extends State<FriendsScreen> {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // 수락 버튼
                           ElevatedButton(
                             onPressed: () {
                               _dataManager.acceptRequest(requester);
@@ -214,7 +299,6 @@ class _FriendsScreenState extends State<FriendsScreen> {
                             child: const Text("수락", style: TextStyle(fontSize: 12)),
                           ),
                           const SizedBox(width: 8),
-                          // 거절 버튼
                           OutlinedButton(
                             onPressed: () {
                               _dataManager.rejectRequest(requester);
@@ -235,7 +319,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 const Divider(height: 30, thickness: 8, color: Color(0xFFF5F5F5)),
               ],
 
-              // 1. 최근 플레이한 유저 섹션
+              // 1. 최근 같이 플레이한 유저 섹션
               if (_dataManager.recentPlayers.isNotEmpty) ...[
                 _buildSectionHeader("최근 같이 플레이한 유저"),
                 SizedBox(
@@ -376,14 +460,32 @@ class _FriendsScreenState extends State<FriendsScreen> {
                               child: const Text("참여", style: TextStyle(fontSize: 12)),
                             ),
                           const SizedBox(width: 8),
+
+                          // ★ [수정됨] 팝업 메뉴에서 신고하기 클릭 시 다이얼로그 호출
                           PopupMenuButton<String>(
                             onSelected: (value) {
-                              if (value == 'delete') _deleteFriend(index);
+                              if (value == 'delete') {
+                                _deleteFriend(index);
+                              } else if (value == 'block') {
+                                _dataManager.blockUser(friend);
+                                showSnackBar(context, "${friend.nickname}님을 차단했습니다.");
+                              } else if (value == 'report') {
+                                // 임시 사유가 아닌 입력 다이얼로그 띄우기!
+                                _showReportDialog(friend.nickname);
+                              }
                             },
                             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                               const PopupMenuItem<String>(
                                 value: 'delete',
                                 child: Text('친구 삭제', style: TextStyle(color: Colors.red)),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'block',
+                                child: Text('차단하기', style: TextStyle(color: Colors.orange)),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'report',
+                                child: Text('신고하기', style: TextStyle(color: Colors.grey)),
                               ),
                             ],
                             icon: const Icon(Icons.more_vert, color: Colors.grey),

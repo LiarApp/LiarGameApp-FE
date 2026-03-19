@@ -315,6 +315,17 @@ class _ExplainViewState extends State<ExplainView> {
         
     final state = widget.state;
 
+    String keywordToShow;
+
+    if(state.mode == GameMode.fool&&widget.currentPlayer.isLiar)
+    {
+      keywordToShow = state.fakeKeyword;
+    }
+    else
+    {
+      keywordToShow = state.keyword;
+    }
+
     return Scaffold(
       appBar: const GradientAppBar(title: ' '),
       body: Padding(
@@ -389,7 +400,8 @@ class _ExplainViewState extends State<ExplainView> {
               ),
             ),
 
-            if(!widget.currentPlayer.isLiar)
+            if(state.mode==GameMode.fool||!widget.currentPlayer.isLiar||
+              (state.mode == GameMode.spy && widget.currentPlayer.isSpy))
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(12),
@@ -410,7 +422,7 @@ class _ExplainViewState extends State<ExplainView> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      widget.state.keyword,
+                      keywordToShow,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,

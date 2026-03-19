@@ -166,14 +166,18 @@ class ResultView extends StatelessWidget {
                                 horizontal: 12,
                                 vertical: 6),
                         decoration: BoxDecoration(
-                          color: p.isLiar
+                          color: state.mode == GameMode.spy && p.isSpy
+                          ?Colors.blue
+                          :p.isLiar
                               ? Colors.red
                               : Colors.black,
                           borderRadius:
                               BorderRadius.circular(6),
                         ),
                         child: Text(
-                          p.isLiar
+                          state.mode == GameMode.spy && p.isSpy
+                          ?'스파이'
+                          :p.isLiar
                               ? '라이어'
                               : '시민',
                           style: const TextStyle(

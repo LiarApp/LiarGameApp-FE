@@ -20,7 +20,25 @@ class RoleCheckView extends StatelessWidget {
   @override
 Widget build(BuildContext context) {
   final player = state.players.first;
+  // final player = state.currentPlayer;
+  // 추후에 위와 같은 형태로 코드 수정
+
+  final bool isFoolMode = state.mode == GameMode.fool;
   final bool isLiar = player.isLiar;
+  final bool isSpy = state.mode == GameMode.spy&&player.isSpy;
+
+  String keywordToShow;
+
+  if(state.mode == GameMode.fool && player.isLiar)
+  {
+    keywordToShow = state.fakeKeyword;
+  }
+  else
+  {
+    keywordToShow = state.keyword;
+  }
+
+  //final bool isLiar = player.isLiar;
 
   return Scaffold(
     appBar: const GradientAppBar(title: '  '),
@@ -33,11 +51,19 @@ Widget build(BuildContext context) {
 
           /// 🎭 역할 멘트
           Text(
-            isLiar ? '당신은 라이어입니다' : '당신은 시민입니다',
+            isFoolMode
+              ?'제시어를 확인하세요'
+              :isSpy
+                ?'당신은 스파이입니다.'
+                :isLiar ? '당신은 라이어입니다' : '당신은 시민입니다',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: isLiar ? Colors.red : Colors.green,
+              color: isFoolMode
+                      ?Colors.green
+                      :isSpy
+                        ?Colors.blue
+                        : (isLiar ? Colors.red : Colors.green),
             ),
             textAlign: TextAlign.center,
           ),
@@ -46,7 +72,11 @@ Widget build(BuildContext context) {
 
           /// 🎭 안내 문구
           Text(
-            isLiar
+            isFoolMode
+              ?'제시어를 확인하고\n라이어를 찾아보세요!'
+              :isSpy
+                ?'라이어가 제시어를 알아차릴 수 있게\n설명해보세요!'
+              :isLiar
                 ? '제시어는 공개되지 않습니다.\n'
                   '다른 플레이어들의 설명을 듣고\n'
                   '정체를 숨기세요!'
@@ -87,7 +117,7 @@ Widget build(BuildContext context) {
                       textAlign: TextAlign.center,
                     ),
 
-                    if (!isLiar) ...[
+                    if (isFoolMode||!isLiar || isSpy) ...[
                       const SizedBox(height: 24),
                       const Divider(),
                       const SizedBox(height: 16),
@@ -100,7 +130,7 @@ Widget build(BuildContext context) {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        state.keyword,
+                        keywordToShow,
                         style: GameTextStyles.pink.copyWith(
                           fontSize: 20,
                         ),

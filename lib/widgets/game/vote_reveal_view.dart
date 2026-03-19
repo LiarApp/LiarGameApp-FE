@@ -103,12 +103,25 @@ class VoteRevealView extends StatelessWidget {
             {
               state.calculateResult();
 
+              final voted = state.finalVotedPlayer!;
+
+              if(state.mode == GameMode.spy&&voted.isSpy){
+                onNext(GamePhase.result);
+              }
+              else if(voted.isLiar){
+                onNext(GamePhase.liarGuess);
+              }
+              else{
+                state.result = GameResult.liarWin;
+                onNext(GamePhase.result);
+              }
+/*
               if(state.finalVotedPlayer!.isLiar){
                 onNext(GamePhase.liarGuess);
               }else{
                 state.result = GameResult.liarWin;
                 onNext(GamePhase.result);
-              }
+              }*/
               /*
               state.calculateResult();
               onNext(GamePhase.result);

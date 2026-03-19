@@ -26,6 +26,8 @@ class GameState {
   GamePhase phase;
   String topic;
   String keyword;
+  String fakeKeyword;
+
   int remainTime;
 
   List<Player> players;
@@ -45,6 +47,7 @@ class GameState {
     required this.phase,
     required this.topic,
     required this.keyword,
+    required this.fakeKeyword,
     //required this.remainTime,
     required this.players,
     required this.votes,
@@ -116,13 +119,21 @@ class GameState {
   // 🎯 최종 결과 계산 (예시)
   void calculateResult() {
     final mostVoted = getMostVotedPlayers().first;
+
     finalVotedPlayer = mostVoted; //
     activeCandidates = players;
-    
-    if(!mostVoted.isLiar){
-      result = GameResult.liarWin;
+
+    if(mode == GameMode.spy&&mostVoted.isSpy){
+      result = GameResult.citizenWin;
       return;
     }
+    
+    if(mostVoted.isLiar){
+      result = GameResult.citizenWin;
+      return;
+    }
+
+    result = GameResult.liarWin;
 /*
     result = mostVoted.isLiar
         ? GameResult.citizenWin
